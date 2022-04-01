@@ -1,4 +1,4 @@
-module dtmdriver-nacos
+module github.com/horseLk/dtmdriver-nacos
 
 go 1.17
 
