@@ -1,4 +1,4 @@
-package driver
+package httpdriver
 
 type HttpDriver interface {
 	// RegisterHttpResolver register the http resolver to handle custom scheme
