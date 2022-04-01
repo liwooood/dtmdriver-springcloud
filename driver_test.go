@@ -3,7 +3,6 @@ package driver
 import (
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"testing"
-	"time"
 )
 
 func TestNacosDriver_RegisterHttpService(t *testing.T) {
@@ -26,6 +25,6 @@ func TestNacosDriver_RegisterHttpService(t *testing.T) {
 		t.FailNow()
 	}
 
-	time.Sleep(3600 * time.Second)
+	//time.Sleep(3600 * time.Second)
 
 }

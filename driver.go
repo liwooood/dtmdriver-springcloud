@@ -26,8 +26,6 @@ func (n *nacosDriver) GetName() string {
 }
 
 func (n *nacosDriver) RegisterGrpcResolver() {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (n *nacosDriver) RegisterGrpcService(target string, endpoint string) error {
