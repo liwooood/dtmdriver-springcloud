@@ -88,6 +88,10 @@ func (n *nacosDriver) buildNacosClient(target string, options map[string]string)
 		return errors.New("must configure password for nacos")
 	}
 
+	namespaceId := ""
+	if v, ok := options["namespaceId"]; ok {
+		namespaceId = v
+	}
 	var timeout uint64 = 5000
 	if v, ok := options["timeout"]; ok {
 		num, err := strconv.ParseUint(v, 10, 64)
@@ -131,6 +135,7 @@ func (n *nacosDriver) buildNacosClient(target string, options map[string]string)
 			LogDir:              logDir,
 			Username:            options["username"],
 			Password:            options["password"],
+			NamespaceId:         namespaceId,
 		},
 	})
 
