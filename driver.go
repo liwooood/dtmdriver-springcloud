@@ -14,7 +14,7 @@ import (
 
 const (
 	DriverName  = "dtm-driver-nacos"
-	ServiceName = "serviceName"
+	ServiceName = "dtmService"
 )
 
 type nacosDriver struct {
@@ -72,25 +72,6 @@ func (n *nacosDriver) RegisterHttpService(target string, endpoint string, option
 	}
 	if !succ {
 		logger.Infof("register service %s to nacos fail.", ServiceName)
-	}
-	for _, path := range paths {
-		logger.Infof("current service name is : %s", path)
-		//succ, err := n.nacosClient.RegisterInstance(vo.RegisterInstanceParam{
-		//	Ip:          ip,
-		//	Port:        port,
-		//	ServiceName: ServiceName,
-		//	Weight:      10,
-		//	ClusterName: DtmService,
-		//	Enable:      true,
-		//	Healthy:     true,
-		//	Ephemeral:   true,
-		//})
-		//if err != nil {
-		//	return err
-		//}
-		//if !succ {
-		//	logger.Infof("register service %s to nacos fail.", path)
-		//}
 	}
 	return nil
 }
