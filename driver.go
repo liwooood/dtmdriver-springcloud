@@ -38,10 +38,6 @@ func (n *nacosDriver) ParseServerMethod(uri string) (server string, method strin
 	panic("implement me")
 }
 
-func (n *nacosDriver) RegisterHttpResolver() {
-
-}
-
 func (n *nacosDriver) RegisterHttpService(target string, endpoint string, options map[string]string, paths []string) error {
 	if n.nacosClient == nil {
 		err := n.buildNacosClient(target, options)
