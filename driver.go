@@ -1,12 +1,14 @@
 package driver
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/dtm-labs/dtmdriver"
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"strconv"
 	"strings"
@@ -15,6 +17,7 @@ import (
 const (
 	DriverName  = "dtm-driver-nacos"
 	ServiceName = "dtmService"
+	Delimiter   = "::"
 )
 
 type nacosDriver struct {
@@ -38,7 +41,27 @@ func (n *nacosDriver) ParseServerMethod(uri string) (server string, method strin
 	panic("implement me")
 }
 
-func (n *nacosDriver) RegisterHttpService(target string, endpoint string, options map[string]string, paths []string) error {
+func (n *nacosDriver) ResolveHttpService(serviceUrl string) (string, error) {
+	if strings.HasPrefix(serviceUrl, DriverName) {
+		messages := strings.Split(serviceUrl, Delimiter)
+		serviceName := messages[1]
+		groupName := messages[2]
+		clusters := make([]string, 0)
+		err := json.Unmarshal(([]byte)(messages[3]), &clusters)
+		if err != nil {
+			return "", err
+		}
+		path := messages[4]
+		instance, err := n.SelectOneHealthyInstance(serviceName, groupName, clusters)
+		if err != nil {
+			return "", err
+		}
+		serviceUrl = "http://" + instance.Ip + ":" + strconv.FormatUint(instance.Port, 10) + path
+	}
+	return serviceUrl, nil
+}
+
+func (n *nacosDriver) RegisterHttpService(target string, endpoint string, options map[string]string) error {
 	if n.nacosClient == nil {
 		err := n.buildNacosClient(target, options)
 		if err != nil {
@@ -70,6 +93,24 @@ func (n *nacosDriver) RegisterHttpService(target string, endpoint string, option
 		logger.Infof("register service %s to nacos fail.", ServiceName)
 	}
 	return nil
+}
+
+func (n *nacosDriver) SelectOneHealthyInstance(serviceName string, groupName string, clusters []string) (*model.Instance, error) {
+	if serviceName == "" {
+		return nil, errors.New("must input serviceName when query nacos instance")
+	}
+	if groupName == "" {
+		groupName = "DEFAULT_GROUP"
+	}
+	if len(clusters) == 0 {
+		clusters = append(clusters, "DEFAULT")
+	}
+
+	return n.nacosClient.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{
+		ServiceName: serviceName,
+		GroupName:   groupName,
+		Clusters:    clusters,
+	})
 }
 
 func (n *nacosDriver) buildNacosClient(target string, options map[string]string) error {
