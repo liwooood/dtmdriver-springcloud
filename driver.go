@@ -41,24 +41,38 @@ func (n *nacosDriver) ParseServerMethod(uri string) (server string, method strin
 	panic("implement me")
 }
 
-func (n *nacosDriver) ResolveHttpService(serviceUrl string) (string, error) {
-	if strings.HasPrefix(serviceUrl, DriverName) {
-		messages := strings.Split(serviceUrl, Delimiter)
-		serviceName := messages[1]
-		groupName := messages[2]
-		clusters := make([]string, 0)
-		err := json.Unmarshal(([]byte)(messages[3]), &clusters)
-		if err != nil {
-			return "", err
+func (n *nacosDriver) ResolveHttpService(originalUrl string) string {
+	// remove "http://"
+	serviceUrl := strings.Split(originalUrl, "//")[1]
+	serviceName := serviceUrl[0:strings.IndexByte(serviceUrl, '/')]
+	path := serviceUrl[strings.IndexByte(serviceUrl, '/'):strings.IndexByte(serviceUrl, '?')]
+	params := strings.Split(serviceUrl[strings.IndexByte(serviceUrl, '?')+1:], "&")
+	realParams := ""
+	clusters := make([]string, 0)
+	groupName := "DEFAULT_GROUP"
+	for _, param := range params {
+		paramKey := param[0:strings.Index(param, "=")]
+		paramValue := param[strings.Index(param, "=")+1:]
+		if paramKey == "clusters" {
+			err := json.Unmarshal(([]byte)(paramValue), &clusters)
+			if err != nil {
+				return originalUrl
+			}
+			continue
 		}
-		path := messages[4]
-		instance, err := n.SelectOneHealthyInstance(serviceName, groupName, clusters)
-		if err != nil {
-			return "", err
+		if paramKey == "groupName" {
+			groupName = paramValue
+			continue
 		}
-		serviceUrl = "http://" + instance.Ip + ":" + strconv.FormatUint(instance.Port, 10) + path
+		// other parameters
+		realParams += param
 	}
-	return serviceUrl, nil
+	instance, err := n.SelectOneHealthyInstance(serviceName, groupName, clusters)
+	if err != nil || instance == nil {
+		return originalUrl
+	}
+	realUrl := "http://" + instance.Ip + ":" + strconv.FormatUint(instance.Port, 10) + path + "?" + realParams
+	return realUrl
 }
 
 func (n *nacosDriver) RegisterHttpService(target string, endpoint string, options map[string]string) error {
@@ -98,9 +112,6 @@ func (n *nacosDriver) RegisterHttpService(target string, endpoint string, option
 func (n *nacosDriver) SelectOneHealthyInstance(serviceName string, groupName string, clusters []string) (*model.Instance, error) {
 	if serviceName == "" {
 		return nil, errors.New("must input serviceName when query nacos instance")
-	}
-	if groupName == "" {
-		groupName = "DEFAULT_GROUP"
 	}
 	if len(clusters) == 0 {
 		clusters = append(clusters, "DEFAULT")
