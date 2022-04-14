@@ -54,6 +54,9 @@ func (n *nacosDriver) ResolveHttpService(originalUrl string) string {
 		paramKey := param[0:strings.Index(param, "=")]
 		paramValue := param[strings.Index(param, "=")+1:]
 		if paramKey == "clusters" {
+			if len(paramValue) == 0 {
+				paramValue = "[]"
+			}
 			err := json.Unmarshal(([]byte)(paramValue), &clusters)
 			if err != nil {
 				return originalUrl
