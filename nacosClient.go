@@ -3,8 +3,10 @@ package driver
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	nurl "net/url"
 	"strconv"
+	"strings"
 
 	"github.com/dtm-labs/dtmdriver"
 	"github.com/nacos-group/nacos-sdk-go/clients"
@@ -18,6 +20,9 @@ type nacosClient struct {
 }
 
 func (d *nacosClient) ResolveURL(url string) (string, error) {
+	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+		return url, nil
+	}
 	u, err := nurl.Parse(url)
 	if err != nil {
 		return "", err
@@ -39,6 +44,7 @@ func (d *nacosClient) ResolveURL(url string) (string, error) {
 		return url, err
 	}
 	u.Host = instance.Ip + ":" + strconv.FormatUint(instance.Port, 10)
+	u.Scheme = "http"
 	return u.String(), nil
 }
 
