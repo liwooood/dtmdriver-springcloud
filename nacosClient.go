@@ -3,7 +3,6 @@ package driver
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	nurl "net/url"
 	"strconv"
 	"strings"
