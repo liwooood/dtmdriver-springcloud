@@ -1,35 +1,60 @@
 package driver
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/dtm-labs/dtmdriver"
+	"github.com/go-resty/resty/v2"
+	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
-type httpDriver struct {
-	client dtmdriver.HTTPClient
+type config struct {
+	Addr           string
+	Type           string
+	ClientConfig   constant.ClientConfig
+	InstanceConfig vo.RegisterInstanceParam
 }
 
-func (d *httpDriver) GetName() string {
-	return "dtm-driver-http"
+type springcloudDriver struct {
+	client naming_client.INamingClient
 }
 
-func (d *httpDriver) ResolveURL(url string) (string, error) {
-	return d.client.ResolveURL(url)
+func (d *springcloudDriver) GetName() string {
+	return "dtm-driver-springcloud"
 }
 
-func (d *httpDriver) RegisterService(target string, endpoint string) error {
-	return d.client.RegisterService(target, endpoint)
-}
-
-func (d *httpDriver) Init(registryType string, address string, options string) error {
-	addrs := strings.Split(address, ",")
-	var err error
-	if registryType == "nacos" {
-		d.client, err = newNacosClient(addrs, options)
-	} else {
-		return fmt.Errorf("unsupported registry type: %s", registryType)
+func (d *springcloudDriver) RegisterService(target string, endpoint string) error {
+	conf := config{}
+	err := json.Unmarshal([]byte(target), &conf)
+	if err != nil {
+		return fmt.Errorf("invalid options: %s error: %w", target, err)
 	}
-	return err
+	if conf.Type == "nacos" {
+		d.client, err = newNacosClient(strings.Split(conf.Addr, ","), conf.ClientConfig)
+		if err != nil {
+			return fmt.Errorf("new nacos client error: %w", err)
+		}
+	} else {
+		return fmt.Errorf("unknown type: %s", conf.Type)
+	}
+	return d.registerService(conf.InstanceConfig, endpoint)
+}
+
+func (d *springcloudDriver) ParseServerMethod(uri string) (server string, method string, err error) {
+	return "", "", nil
+}
+
+func (d *springcloudDriver) RegisterAddrResolver() {
+	dtmdriver.Middlewares.HTTP = append(dtmdriver.Middlewares.HTTP, func(c *resty.Client, r *resty.Request) (err error) {
+		r.URL, err = d.resolveURL(r.URL)
+		return
+	})
+}
+
+func init() {
+	dtmdriver.Register(&springcloudDriver{})
 }
