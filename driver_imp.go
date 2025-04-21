@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"encoding/json"
 	nurl "net/url"
 	"strconv"
 	"strings"
@@ -74,7 +75,8 @@ func (d *springcloudDriver) registerService(config vo.RegisterInstanceParam, end
 	if config.Weight == 0 {
 		config.Weight = 10
 	}
-	logger.Infof("registering service: %v", config)
+	configJsonBytes, err := json.MarshalIndent(config, "", "  ")
+	logger.Infof("registering service: %v", configJsonBytes)
 	_, err = d.client.RegisterInstance(config)
 	return err
 }
