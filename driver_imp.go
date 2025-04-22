@@ -26,11 +26,6 @@ func newNacosClient(addrs []string, clientConfig constant.ClientConfig) (naming_
 		})
 	}
 
-	//nclient, err := clients.CreateNamingClient(map[string]interface{}{
-	//	"serverConfigs": serverConfigs,
-	//	"clientConfig":  clientConfig,
-	//})
-
 	// create naming client
 	nclient, err := clients.NewNamingClient(
 		vo.NacosClientParam{
@@ -84,8 +79,7 @@ func (d *springcloudDriver) registerService(config vo.RegisterInstanceParam, end
 	if config.Weight == 0 {
 		config.Weight = 10
 	}
-	config.Metadata = map[string]string{"preserved.register.source": "SPRING_CLOUD"}
-	//configJsonBytes, err := json.MarshalIndent(config, "", "  ")
+	//config.Metadata = map[string]string{"preserved.register.source": "SPRING_CLOUD"}
 	logger.Infof("registering service: %v", config)
 	_, err = d.client.RegisterInstance(config)
 	return err
